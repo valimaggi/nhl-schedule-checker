@@ -1,9 +1,11 @@
 const axios = require('axios');
 
 const todayString = '2019-10-01';
-/* const today = new Date()
+/*
+const today = new Date()
 const todayString = `${today.getFullYear()}-${today.getMonth() +
-  1}-${today.getDate()}` */
+  1}-${today.getDate()}`
+*/
 const getEndDate = endDateFactor => {
   switch (endDateFactor) {
     case 'CMHL':
