@@ -59,7 +59,7 @@ const sumOpponentOverlaps = (opp, acc, playsInSameDate) => ({
 
 const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1)
 
-function printResults(team, gameCount, overlappingDays) {
+function printResults (team, gameCount, overlappingDays) {
   console.log('--- ' + capitalize(team) + ' ---' + gameCount)
   Object.keys(overlappingDays).forEach(opp => {
     console.log(
@@ -73,7 +73,7 @@ function printResults(team, gameCount, overlappingDays) {
   })
 }
 
-async function app(endDateFactor, team, ...opponents) {
+async function app (endDateFactor, team, ...opponents) {
   try {
     const dateData = await getData(endDateFactor)
     let gameCount = 0
