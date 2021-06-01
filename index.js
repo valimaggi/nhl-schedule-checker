@@ -1,96 +1,96 @@
-const axios = require('axios')
+const axios = require('axios');
 
-const todayString = '2019-10-01'
+const todayString = '2019-10-01';
 /* const today = new Date()
 const todayString = `${today.getFullYear()}-${today.getMonth() +
   1}-${today.getDate()}` */
 const getEndDate = endDateFactor => {
   switch (endDateFactor) {
     case 'CMHL':
-      return '2020-03-22'
+      return '2020-03-22';
     case 'GWHL':
-      return '2020-03-08'
+      return '2020-03-08';
     case 'GWHL-end':
-      return '2020-03-29'
+      return '2020-03-29';
     case 'end':
-      return '2020-04-01'
+      return '2020-04-01';
     case 'runko':
-      return '2020-02-22'
+      return '2020-02-22';
     case 'pof':
-      return '2020-04-01'
+      return '2020-04-01';
     default: {
       console.log(
         "Wrong first parameter! Any of 'CMHL', 'GWHL', 'GWHL-end', 'end', 'runko', 'pof' will do."
-      )
-      throw Error('Wrong parameter')
+      );
+      throw Error('Wrong parameter');
     }
   }
-}
+};
 const url = endDateFactor =>
   `https://statsapi.web.nhl.com/api/v1/schedule?startDate=${todayString}&endDate=${getEndDate(
     endDateFactor
-  )}`
+  )}`;
 const getData = async endDateFactor => {
   try {
-    return axios(url(endDateFactor))
+    return axios(url(endDateFactor));
   } catch (e) {
-    throw Error(e)
+    throw Error(e);
   }
-}
+};
 
 const isHome = (game, team) =>
-  game.teams.home.team.name.toUpperCase().includes(team.toUpperCase())
+  game.teams.home.team.name.toUpperCase().includes(team.toUpperCase());
 const isAway = (game, team) =>
-  game.teams.away.team.name.toUpperCase().includes(team.toUpperCase())
-const plays = team => game => isHome(game, team) || isAway(game, team)
+  game.teams.away.team.name.toUpperCase().includes(team.toUpperCase());
+const plays = team => game => isHome(game, team) || isAway(game, team);
 
 const bothPlay = (first, second) => game =>
   isHome(game, first) ||
   isAway(game, first) ||
   isHome(game, second) ||
-  isAway(game, second)
+  isAway(game, second);
 
 const sameGame = (first, second) => game =>
   (isHome(game, first) && isAway(game, second)) ||
-  (isHome(game, second) && isAway(game, first))
+  (isHome(game, second) && isAway(game, first));
 
 const sumOpponentOverlaps = (opp, acc, playsInSameDate) => ({
   [opp]: opp in acc ? acc[opp] + playsInSameDate : playsInSameDate
-})
+});
 
-const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1)
+const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
 
 const toOverlappingDates = (team, opponents) => (acc, currentDate) => {
   const summedOpponents = opponents.map(opp => {
-    const bothPlayInDate = bothPlay(team, opp)
-    const sameGameInDate = sameGame(team, opp)
+    const bothPlayInDate = bothPlay(team, opp);
+    const sameGameInDate = sameGame(team, opp);
     const bothPlays =
       currentDate.games.filter(bothPlayInDate).length === 2 ||
       currentDate.games.filter(sameGameInDate).length > 0
         ? 1
-        : 0
-    return sumOpponentOverlaps(opp, acc, bothPlays)
-  })
-  return Object.assign({}, ...summedOpponents)
-}
+        : 0;
+    return sumOpponentOverlaps(opp, acc, bothPlays);
+  });
+  return Object.assign({}, ...summedOpponents);
+};
 
 async function app (endDateFactor, team, ...opponents) {
   try {
-    const dateData = await getData(endDateFactor)
+    const dateData = await getData(endDateFactor);
 
-    const toTeamGameDatesCount = date => date.games.filter(plays(team)).length
-    const sum = (acc, curr) => acc + curr
-    const gameCount = dateData.data.dates.map(toTeamGameDatesCount).reduce(sum)
+    const toTeamGameDatesCount = date => date.games.filter(plays(team)).length;
+    const sum = (acc, curr) => acc + curr;
+    const gameCount = dateData.data.dates.map(toTeamGameDatesCount).reduce(sum);
 
-    const overlappingDays = dateData.data.dates.reduce(toOverlappingDates(team, opponents), {})
-    printResults(team, gameCount, overlappingDays)
+    const overlappingDays = dateData.data.dates.reduce(toOverlappingDates(team, opponents), {});
+    printResults(team, gameCount, overlappingDays);
   } catch (e) {
-    throw Error(e)
+    throw Error(e);
   }
 }
 
 function printResults (team, gameCount, overlappingDays) {
-  console.log('--- ' + capitalize(team) + ' ---' + gameCount)
+  console.log('--- ' + capitalize(team) + ' ---' + gameCount);
   Object.keys(overlappingDays).forEach(opp => {
     console.log(
       capitalize(opp) +
@@ -99,14 +99,14 @@ function printResults (team, gameCount, overlappingDays) {
         '   ' +
         ((overlappingDays[opp] / gameCount) * 100).toFixed(0) +
         '%'
-    )
-  })
+    );
+  });
 }
 
-const myArgs = process.argv.slice(2)
+const myArgs = process.argv.slice(2);
 
 if (myArgs.length < 2) {
-  console.log('Provide at least two team names')
+  console.log('Provide at least two team names');
 } else {
-  app(...myArgs)
+  app(...myArgs);
 }
