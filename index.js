@@ -1,8 +1,9 @@
 const axios = require('axios')
 
-const today = new Date()
+const todayString = '2019-10-01'
+/* const today = new Date()
 const todayString = `${today.getFullYear()}-${today.getMonth() +
-  1}-${today.getDate()}`
+  1}-${today.getDate()}` */
 const getEndDate = endDateFactor => {
   switch (endDateFactor) {
     case 'CMHL':
@@ -59,6 +60,35 @@ const sumOpponentOverlaps = (opp, acc, playsInSameDate) => ({
 
 const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1)
 
+const toOverlappingDates = (team, opponents) => (acc, currentDate) => {
+  const summedOpponents = opponents.map(opp => {
+    const bothPlayInDate = bothPlay(team, opp)
+    const sameGameInDate = sameGame(team, opp)
+    const bothPlays =
+      currentDate.games.filter(bothPlayInDate).length === 2 ||
+      currentDate.games.filter(sameGameInDate).length > 0
+        ? 1
+        : 0
+    return sumOpponentOverlaps(opp, acc, bothPlays)
+  })
+  return Object.assign({}, ...summedOpponents)
+}
+
+async function app (endDateFactor, team, ...opponents) {
+  try {
+    const dateData = await getData(endDateFactor)
+
+    const toTeamGameDatesCount = date => date.games.filter(plays(team)).length
+    const sum = (acc, curr) => acc + curr
+    const gameCount = dateData.data.dates.map(toTeamGameDatesCount).reduce(sum)
+
+    const overlappingDays = dateData.data.dates.reduce(toOverlappingDates(team, opponents), {})
+    printResults(team, gameCount, overlappingDays)
+  } catch (e) {
+    throw Error(e)
+  }
+}
+
 function printResults (team, gameCount, overlappingDays) {
   console.log('--- ' + capitalize(team) + ' ---' + gameCount)
   Object.keys(overlappingDays).forEach(opp => {
@@ -73,29 +103,6 @@ function printResults (team, gameCount, overlappingDays) {
   })
 }
 
-async function app (endDateFactor, team, ...opponents) {
-  try {
-    const dateData = await getData(endDateFactor)
-    let gameCount = 0
-    const overlappingDays = dateData.data.dates.reduce((acc, currentDate) => {
-      gameCount += currentDate.games.filter(plays(team)).length
-      const summedOpponents = opponents.map(opp => {
-        const bothPlayInDate = bothPlay(team, opp)
-        const sameGameInDate = sameGame(team, opp)
-        const bothPlays =
-          currentDate.games.filter(bothPlayInDate).length === 2 ||
-          currentDate.games.filter(sameGameInDate).length > 0
-            ? 1
-            : 0
-        return sumOpponentOverlaps(opp, acc, bothPlays)
-      })
-      return Object.assign({}, ...summedOpponents)
-    }, {})
-    printResults(team, gameCount, overlappingDays)
-  } catch (e) {
-    throw Error(e)
-  }
-}
 const myArgs = process.argv.slice(2)
 
 if (myArgs.length < 2) {
