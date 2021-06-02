@@ -4,13 +4,14 @@ module.exports = {
     commonjs: true,
     es6: true
   },
-  extends: ['standard'],
+  parser: '@typescript-eslint/parser',
+  plugins: [
+    '@typescript-eslint',
+  ],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly'
-  },
-  parserOptions: {
-    ecmaVersion: 2018
   },
   rules: {
     "semi": ["error", "always"]

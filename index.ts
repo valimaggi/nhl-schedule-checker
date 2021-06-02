@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 const todayString = '2019-10-01';
 /*
@@ -6,7 +6,7 @@ const today = new Date()
 const todayString = `${today.getFullYear()}-${today.getMonth() +
   1}-${today.getDate()}`
 */
-const getEndDate = endDateFactor => {
+const getEndDate = (endDateFactor: string) => {
   switch (endDateFactor) {
     case 'CMHL':
       return '2020-03-22';
@@ -28,11 +28,11 @@ const getEndDate = endDateFactor => {
     }
   }
 };
-const url = endDateFactor =>
+const url = (endDateFactor: string) =>
   `https://statsapi.web.nhl.com/api/v1/schedule?startDate=${todayString}&endDate=${getEndDate(
     endDateFactor
   )}`;
-const getData = async endDateFactor => {
+const getData = async (endDateFactor: string) => {
   try {
     return axios(url(endDateFactor));
   } catch (e) {
@@ -40,29 +40,32 @@ const getData = async endDateFactor => {
   }
 };
 
-const isHome = (game, team) =>
-  game.teams.home.team.name.toUpperCase().includes(team.toUpperCase());
-const isAway = (game, team) =>
-  game.teams.away.team.name.toUpperCase().includes(team.toUpperCase());
-const plays = team => game => isHome(game, team) || isAway(game, team);
+const isHome = (game: Game, teamName: string) =>
+  game.teams.home.team.name.toUpperCase().includes(teamName.toUpperCase());
+const isAway = (game: Game, teamName: string) =>
+  game.teams.away.team.name.toUpperCase().includes(teamName.toUpperCase());
+const plays = (teamName: string) => (game: Game) => isHome(game, teamName) || isAway(game, teamName);
 
-const bothPlay = (first, second) => game =>
+const bothPlay = (first: string, second: string) => (game: Game) =>
   isHome(game, first) ||
   isAway(game, first) ||
   isHome(game, second) ||
   isAway(game, second);
 
-const sameGame = (first, second) => game =>
+const sameGame = (first: string, second: string) => (game: Game) =>
   (isHome(game, first) && isAway(game, second)) ||
   (isHome(game, second) && isAway(game, first));
 
-const sumOpponentOverlaps = (opp, acc, playsInSameDate) => ({
+const sumOpponentOverlaps = (opp: string, acc: OverLappingDays, playsInSameDate: number): OverLappingDays => ({
   [opp]: opp in acc ? acc[opp] + playsInSameDate : playsInSameDate
 });
 
-const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
+const capitalize = (string: string) => string.charAt(0).toUpperCase() + string.slice(1);
 
-const toOverlappingDates = (team, opponents) => (acc, currentDate) => {
+type OverLappingDays = {
+  [teamName: string]: number
+}
+const toOverlappingDates = (team: string, opponents: string[]) => (acc: OverLappingDays, currentDate: MatchDate): OverLappingDays => {
   const summedOpponents = opponents.map(opp => {
     const bothPlayInDate = bothPlay(team, opp);
     const sameGameInDate = sameGame(team, opp);
@@ -76,12 +79,12 @@ const toOverlappingDates = (team, opponents) => (acc, currentDate) => {
   return Object.assign({}, ...summedOpponents);
 };
 
-async function app (endDateFactor, team, ...opponents) {
+async function app (endDateFactor: string, team: string, opponents: string[]) {
   try {
     const dateData = await getData(endDateFactor);
 
-    const toTeamGameDatesCount = date => date.games.filter(plays(team)).length;
-    const sum = (acc, curr) => acc + curr;
+    const toTeamGameDatesCount = (date: MatchDate) => date.games.filter(plays(team)).length;
+    const sum = (acc: number, curr: number) => acc + curr;
     const gameCount = dateData.data.dates.map(toTeamGameDatesCount).reduce(sum);
 
     const overlappingDays = dateData.data.dates.reduce(toOverlappingDates(team, opponents), {});
@@ -91,7 +94,7 @@ async function app (endDateFactor, team, ...opponents) {
   }
 }
 
-function printResults (team, gameCount, overlappingDays) {
+function printResults (team: string, gameCount: number, overlappingDays: OverLappingDays) {
   console.log('--- ' + capitalize(team) + ' ---' + gameCount);
   Object.keys(overlappingDays).forEach(opp => {
     console.log(
@@ -105,10 +108,10 @@ function printResults (team, gameCount, overlappingDays) {
   });
 }
 
-const myArgs = process.argv.slice(2);
+const myArgs: string[] = process.argv.slice(2);
 
 if (myArgs.length < 2) {
   console.log('Provide at least two team names');
 } else {
-  app(...myArgs);
+  app(myArgs[0], myArgs[1], myArgs.slice(2));
 }
