@@ -4,12 +4,12 @@ NHL schedule checker for overlapping match days between teams
 
 ## How to use
 
-Run `node index.js` in the command line with arguments described below:
+Run `npm start` in the command line with arguments described below:
 
 - 1st argument: Detrmines which end date is used
   - `CMHL` => `2020-03-22`
   - `GWHL` => `2020-03-08`
-  - `end` => `2020-04-01`
+  - `end` => `2020-04-01` (end of the season)
   - `runko` => `2020-02-22`
   - `pof` => `2020-04-01`
 - 2st argument: Team whose overlapping matches are to be checked
